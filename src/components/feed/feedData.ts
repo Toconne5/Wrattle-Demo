@@ -44,4 +44,8 @@ export const transactionFeedData: Transaction[] = [
 // 🛠️ Utility function for adding transactions
 export const addTransactionToFeed = (transaction: Transaction) => {
   transactionFeedData.unshift(transaction);
+  // 🔔 Let the UI know something changed so HomeTab can rebuild posts
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('transactionFeedDataUpdated'));
+  }
 };

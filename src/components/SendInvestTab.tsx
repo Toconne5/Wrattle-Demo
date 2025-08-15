@@ -9,11 +9,9 @@ import SettingsDropdown from './SettingsDropdown';
 import { fetchStockData, StockData } from '../services/stockApi';
 import ReceiveMoneyModal from './ReceiveMoneyModal';
 import { addTransactionToFeed } from './feed/feedData';
-import { useTransactions } from '../components/TransactionsContext';  
+import { useTransactions } from '../components/TransactionsContext';
 
-interface SendInvestTabProps {
-  onLogout: () => void;
-}
+interface SendInvestTabProps { onLogout: () => void; }
 
 const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
   const [recipientSearchTerm, setRecipientSearchTerm] = useState('');
@@ -29,11 +27,8 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
   const [showStockSearch, setShowStockSearch] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [pendingTransaction, setPendingTransaction] = useState<{
-    sender: string;
-    amount: number;
-    stock: string;
-    recipient: string;
-    isKids: boolean;
+    sender: string; amount: number; stock: string; recipient: string; isKids: boolean;
+    stockPrice?: number; stockSymbol?: string; stockName?: string;
   } | null>(null);
 
   const stockDatabase = [
@@ -46,11 +41,7 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
     { id: '1', name: 'Sarah M.', avatar: '👩‍💼', username: '@sarah_m', type: 'friend' },
     { id: '2', name: 'Mike R.', avatar: '👨‍💻', username: '@mike_r', type: 'friend' }
   ];
-
-  const personalAccounts = [
-    { id: 'personal', name: 'Your Personal Account', avatar: '🏦', username: '@you', type: 'personal' }
-  ];
-
+  const personalAccounts = [{ id: 'personal', name: 'Your Personal Account', avatar: '🏦', username: '@you', type: 'personal' }];
   const allRecipients = [...personalAccounts, ...friends];
 
   const bankAccounts = [
@@ -62,7 +53,6 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
     { value: 'personal-brokerage', label: 'Personal Brokerage', balance: '$1,247.83' },
     { value: '529-college', label: 'College 529 Plan', balance: '$8,234.67' }
   ];
-
   const friendBrokerageAccounts = {
     '1': [
       { value: 'sarah-personal', label: 'Personal Brokerage', balance: '$1,247.83' },
@@ -83,20 +73,11 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
   };
 
   const handleStockSearch = async (symbol: string) => {
-    if (!symbol.trim()) {
-      setStockData(null);
-      return;
-    }
+    if (!symbol.trim()) { setStockData(null); return; }
     setLoading(true);
-    try {
-      const data = await fetchStockData(symbol);
-      setStockData(data);
-    } catch (error) {
-      console.error('Error fetching stock data:', error);
-      setStockData(null);
-    } finally {
-      setLoading(false);
-    }
+    try { setStockData(await fetchStockData(symbol)); }
+    catch { setStockData(null); }
+    finally { setLoading(false); }
   };
 
   const getAvailableBrokerageAccounts = () => {
@@ -107,8 +88,7 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
 
   const handleSendMoney = () => {
     if (!amount || !selectedRecipient || !selectedStock || !selectedBrokerageAccount) {
-      alert('Please fill in all fields');
-      return;
+      alert('Please fill in all fields'); return;
     }
 
     const recipient = allRecipients.find(r => r.id === selectedRecipient);
@@ -122,35 +102,14 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
       amount: amountFloat,
       stock: fullStockEntry,
       recipient: recipient?.name || "Friend",
-      isKids
+      isKids,
+      stockPrice: stockData?.price,
+      stockSymbol,
+      stockName
     });
 
-    // Estimate shares
-    const shares = stockData ? parseFloat((amountFloat / stockData.price).toFixed(4)) : 0;
-
-    // Add to transaction feed
-    addTransactionToFeed({
-      id: crypto.randomUUID(),
-      type: recipient?.type === 'personal' ? 'received' : 'sent',
-      sender: "Tommy O.",
-      recipient: recipient?.name || "Friend",
-      amount: amountFloat,
-      stock: stockSymbol,
-      stockName: stockName || "Unknown",
-      brokerageAccount: selectedBrokerageAccount,
-      date: new Date().toISOString(),
-      shares
-    });
-
-    addTransaction({
-      id: crypto.randomUUID(),
-      sender: "Tommy O.",
-      recipient: recipient?.name || "Friend",
-      amount: amountFloat,
-      stock: stockSymbol,
-      date: new Date().toISOString(),
-      type: recipient?.type === 'personal' ? 'received' : 'sent'
-    });
+    // ❌ REMOVE the feed post here (it would use the pre-Accept ticker)
+    // ❌ REMOVE addTransaction here too — we’ll add it after Accept with the final ticker
 
     setShowReceiveModal(true);
   };
@@ -174,7 +133,7 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Amount to Send */}
+          {/* Amount */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Amount to Send</label>
             <div className="relative">
@@ -182,6 +141,8 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
               <Input
                 type="number"
                 placeholder="0.00"
+                min="0"
+                step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="pl-10 text-lg font-semibold"
@@ -197,43 +158,41 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
               <Input
                 placeholder="Search stocks (e.g., AAPL)"
                 value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setShowStockSearch(true);
-                }}
+                onChange={(e) => { setSearchTerm(e.target.value); setShowStockSearch(true); }}
                 onBlur={() => {
                   setTimeout(() => {
                     setShowStockSearch(false);
-                    if (!selectedStock && searchTerm.trim()) {
-                      setSelectedStock(searchTerm.trim().toUpperCase());
-                    }
+                    if (!selectedStock && searchTerm.trim()) setSelectedStock(searchTerm.trim().toUpperCase());
                   }, 150);
                 }}
                 className="pl-10"
               />
-              {showStockSearch && stockDatabase.length > 0 && (
+              {showStockSearch && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto">
-                  {stockDatabase.filter(stock => stock.toLowerCase().includes(searchTerm.toLowerCase())).slice(0, 8).map((stock, index) => {
-                    const [symbol, name] = stock.split(' - ');
-                    return (
-                      <div
-                        key={index}
-                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
-                        onClick={() => handleStockSelect(stock)}
-                      >
-                        <div className="flex justify-between items-center">
-                          <span className="font-semibold text-[#002E5D]">{symbol}</span>
-                          <span className="text-sm text-gray-600 truncate ml-2">{name}</span>
+                  {stockDatabase
+                    .filter(stock => stock.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .slice(0, 8)
+                    .map((stock, index) => {
+                      const [symbol, name] = stock.split(' - ');
+                      return (
+                        <div
+                          key={index}
+                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          onClick={() => handleStockSelect(stock)}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="font-semibold text-[#002E5D]">{symbol}</span>
+                            <span className="text-sm text-gray-600 truncate ml-2">{name}</span>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               )}
             </div>
           </div>
 
-          {/* "To" - Recipient */}
+          {/* To (Recipient) */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">To</label>
             <div className="relative">
@@ -254,9 +213,7 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
                         onClick={() => {
                           setSelectedRecipient(recipient.id);
                           setRecipientSearchTerm(recipient.name);
-                          setTimeout(() => {
-                            setRecipientSearchTerm('');
-                          }, 100);
+                          setTimeout(() => setRecipientSearchTerm(''), 100);
                         }}
                         className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center space-x-3"
                       >
@@ -276,14 +233,13 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Select Recipient's Brokerage Account</label>
             <Select value={selectedBrokerageAccount} onValueChange={setSelectedBrokerageAccount}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {getAvailableBrokerageAccounts().map(account => (
-                  <SelectItem key={account.value} value={account.value}>
-                    {account.label}
-                  </SelectItem>
+                {(allRecipients.find(r => r.id === selectedRecipient)?.type === 'personal'
+                  ? personalBrokerageAccounts
+                  : friendBrokerageAccounts[selectedRecipient as '1' | '2'] || []
+                ).map(account => (
+                  <SelectItem key={account.value} value={account.value}>{account.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -293,14 +249,10 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">From (Bank Account)</label>
             <Select value={selectedBankAccount} onValueChange={setSelectedBankAccount}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {bankAccounts.map(account => (
-                  <SelectItem key={account.value} value={account.value}>
-                    {account.label}
-                  </SelectItem>
+                  <SelectItem key={account.value} value={account.value}>{account.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -329,6 +281,39 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
           originalStock={pendingTransaction.stock}
           recipientName={pendingTransaction.recipient}
           isKidsAccount={pendingTransaction.isKids}
+          stockPrice={pendingTransaction.stockPrice}
+          stockSymbol={pendingTransaction.stockSymbol}
+          stockName={pendingTransaction.stockName}
+
+          // NEW: when user accepts, post to feed & add transaction with the FINAL ticker
+          onAccepted={({ symbol, name, price, amount }) => {
+            const recipient = [...[{ id: 'personal', type: 'personal' }], ...friends].find(r => r.id === selectedRecipient);
+            const type = recipient?.type === 'personal' ? 'received' : 'sent';
+            const shares = price ? parseFloat((amount / price).toFixed(4)) : 0;
+
+            addTransactionToFeed({
+              id: crypto.randomUUID(),
+              type,
+              sender: "Tommy O.",
+              recipient: pendingTransaction.recipient,
+              amount,
+              stock: symbol,
+              stockName: name || "Unknown",
+              brokerageAccount: selectedBrokerageAccount,
+              date: new Date().toISOString(),
+              shares
+            });
+
+            addTransaction({
+              id: crypto.randomUUID(),
+              sender: "Tommy O.",
+              recipient: pendingTransaction.recipient,
+              amount,
+              stock: symbol,
+              date: new Date().toISOString(),
+              type
+            });
+          }}
         />
       )}
     </div>

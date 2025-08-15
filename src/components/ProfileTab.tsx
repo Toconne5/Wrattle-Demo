@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import NotificationDropdown from './NotificationDropdown';
 import SettingsDropdown from './SettingsDropdown';
 import PortfolioHoldings from './PortfolioHoldings';
 import AssetAllocation from './AssetAllocation';
-import { StockDetailModal } from './StockDetailModal';
 import UserHeader from './Profile/UserHeader';
-import TransactionHistory from './Profile/TransactionHistory';
 import { useNavigate } from 'react-router-dom';
 import { useTransactions } from '../components/TransactionsContext';
 
@@ -16,70 +13,78 @@ const ProfileTab = ({ onLogout }: { onLogout: () => void }) => {
   const [selectedAccount, setSelectedAccount] = useState('personal');
   const [selectedStock, setSelectedStock] = useState<string | null>(null);
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
-  const { transactions, holdings } = useTransactions(); // 🔄 includes holdings
+  const { holdings } = useTransactions(); // live holdings with lots
 
-  const currentUser = {
-    name: "Tommy O.",
-    avatar: "🧑‍💻",
-    username: "tommy_o"
-  };
+  const currentUser = { name: "Tommy O.", avatar: "🧑‍💻", username: "tommy_o" };
 
-  // Portfolio accounts logic (we keep this for dropdown UI and balance structure)
+  // Accounts for the dropdown
   const portfolioAccounts = [
-    { value: 'personal', label: 'Personal Brokerage', balance: '$1,247.83', change: '+$23.47 (1.92%)' },
-    { value: 'child1-utma', label: "Emma's UTMA", balance: '$2,840.15', change: '+$15.23 (0.54%)' },
-    { value: 'child2-utma', label: "Alex's UTMA", balance: '$1,956.42', change: '+$31.85 (1.65%)' },
-    { value: '529-college', label: 'College 529 Plan', balance: '$8,234.67', change: '+$124.33 (1.53%)' }
+    { value: 'personal', label: 'Personal Brokerage' },
+    { value: 'child1-utma', label: "Emma's UTMA" },
+    { value: 'child2-utma', label: "Alex's UTMA" },
+    { value: '529-college', label: 'College 529 Plan' }
   ];
 
-  const currentAccount = portfolioAccounts.find(acc => acc.value === selectedAccount) || portfolioAccounts[0];
-
-  // Hardcoded holding structure (used for PortfolioHoldings display)
-  const holdingsData = {
-    personal: [
-      {
-        symbol: "AAPL",
-        name: "Apple Inc.",
-        totalShares: 100,
-        totalValue: "$15,000",
-        totalReturnColor: "text-green-500",
-        totalReturn: "+5%",
-        lots: [
-          { shares: 50, date: "2022-01-01", costBasis: "$7,000", currentValue: "$8,000", return: "+10%", returnColor: "text-green-500" },
-          { shares: 50, date: "2023-01-01", costBasis: "$8,000", currentValue: "$8,000", return: "0%", returnColor: "text-gray-500" }
-        ]
-      }
-    ],
-    'child1-utma': [],
-    'child2-utma': [],
-    '529-college': []
-  };
-
-  const currentHoldings = holdingsData[selectedAccount as keyof typeof holdingsData] || [];
-
+  // Sum portfolio using lots (exact dollars invested per accept)
   const calculatePortfolioValue = () => {
     if (!holdings || holdings.length === 0) return 0;
-    return holdings.reduce((total, h) => total + h.totalShares * h.price, 0);
+    return holdings.reduce((sum: number, h: any) => {
+      if (Array.isArray(h.lots) && h.lots.length) {
+        const lotsTotal = h.lots.reduce((s: number, lot: any) => {
+          if (typeof lot.amountUSD === 'number') return s + lot.amountUSD;
+          const n = parseFloat(String(lot.currentValue || lot.costBasis || '0').replace(/[$,]/g, ''));
+          return s + (isNaN(n) ? 0 : n);
+        }, 0);
+        return sum + lotsTotal;
+      }
+      return sum + (h.totalShares * (h.price || 0));
+    }, 0);
   };
 
-  const handleStockClick = (symbol: string) => {
-    setSelectedStock(symbol);
-    setIsStockModalOpen(true);
+  // Convert to the shape PortfolioHoldings expects, preserving lots
+  const convertHoldingsForUI = (arr: any[]) => {
+    return (arr || []).map((h: any) => {
+      const lots = (h.lots && h.lots.length)
+        ? h.lots.map((lot: any) => ({
+            shares: lot.shares,
+            date: lot.date,
+            costBasis: lot.costBasis || (typeof lot.amountUSD === 'number' ? `$${lot.amountUSD.toFixed(2)}` : '$0.00'),
+            currentValue: lot.currentValue || (typeof lot.amountUSD === 'number' ? `$${lot.amountUSD.toFixed(2)}` : '$0.00'),
+            return: lot.return ?? '—',
+            returnColor: lot.returnColor ?? 'text-gray-500'
+          }))
+        : [{
+            shares: h.totalShares,
+            date: new Date().toISOString().slice(0,10),
+            costBasis: `$${(h.totalShares * (h.price || 0)).toFixed(2)}`,
+            currentValue: `$${(h.totalShares * (h.price || 0)).toFixed(2)}`,
+            return: '—',
+            returnColor: 'text-gray-500'
+          }];
+
+      const totalValue = lots.reduce((s: number, lot: any) => s + parseFloat(String(lot.currentValue).replace(/[$,]/g,'')), 0);
+
+      return {
+        symbol: h.symbol,
+        name: h.name,
+        totalShares: h.totalShares,
+        totalValue: `$${totalValue.toFixed(2)}`,
+        totalReturnColor: "text-gray-500",
+        totalReturn: "—",
+        lots
+      };
+    });
   };
 
-  const handleCloseStockModal = () => {
-    setIsStockModalOpen(false);
-    setSelectedStock(null);
-  };
+  const currentHoldings = selectedAccount === 'personal' ? convertHoldingsForUI(holdings) : [];
 
-  const handleSendInvestClick = () => {
-    navigate('/send-invest', { state: { prefillRecipient: currentUser.username } });
-  };
+  const handleStockClick = (symbol: string) => { setSelectedStock(symbol); setIsStockModalOpen(true); };
+  const handleCloseStockModal = () => { setIsStockModalOpen(false); setSelectedStock(null); };
+  const handleSendInvestClick = () => { navigate('/send-invest', { state: { prefillRecipient: currentUser.username } }); };
+  const handleSellStock = (symbol: string) => { console.log(`Sell ${symbol}`); };
 
-  const handleSellStock = (symbol: string) => {
-    console.log(`Sell ${symbol}`);
-    // placeholder for selling logic
-  };
+  const total = calculatePortfolioValue();
+  const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 });
 
   return (
     <div className="space-y-6 pb-32 md:pb-8">
@@ -88,36 +93,52 @@ const ProfileTab = ({ onLogout }: { onLogout: () => void }) => {
         <SettingsDropdown onLogout={onLogout} />
       </div>
 
-      <UserHeader 
-        name={currentUser.name} 
-        username={currentUser.username} 
-        avatar={currentUser.avatar} 
-        onSendInvestClick={handleSendInvestClick} 
+      <UserHeader
+        name={currentUser.name}
+        username={currentUser.username}
+        avatar={currentUser.avatar}
+        onSendInvestClick={handleSendInvestClick}
       />
 
-      <div className="bg-gradient-to-r from-[#002E5D] to-[#4DA8DA] rounded-xl p-6 text-white">
-        <div className="flex justify-between items-start mb-4">
+      {/* Feed-style banner (same gradient/structure) */}
+      <div className="bg-gradient-to-r from-[#002E5D] to-[#4DA8DA] rounded-2xl p-6 text-white">
+        <div className="flex items-start justify-between">
           <div className="flex-1">
-            <div className="flex items-center space-x-3 mb-2">
+            <div className="flex items-center space-x-3 mb-3">
               <h3 className="text-lg font-semibold">Portfolio Value</h3>
               <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-                <SelectTrigger className="w-48 bg-white/10 border-white/20 text-white">
+                <SelectTrigger className="w-56 bg-white/10 border-white/20 text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {portfolioAccounts.map((account) => (
-                    <SelectItem key={account.value} value={account.value}>
-                      {account.label}
+                  {portfolioAccounts.map((a) => (
+                    <SelectItem key={a.value} value={a.value}>
+                      {a.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <p className="text-3xl font-bold">${calculatePortfolioValue().toFixed(2)}</p>
+
+            <div className="text-5xl font-extrabold tracking-tight">
+              {currency.format(Math.round(total * 100) / 100)}
+            </div>
+
+            <div className="mt-4 flex items-center space-x-8 text-sm">
+              <div>
+                <div className="opacity-90">Buying Power</div>
+                <div className="font-semibold">$156.32</div>
+              </div>
+              <div>
+                <div className="opacity-90">Day&apos;s Change</div>
+                <div className="font-semibold text-green-300">+1.92%</div>
+              </div>
+            </div>
           </div>
+
           <div className="text-right">
-            <p className="text-green-300 font-semibold">{currentAccount.change}</p>
-            <p className="text-sm opacity-80">Today</p>
+            <div className="text-green-300 font-semibold">+$23.47 (1.92%)</div>
+            <div className="text-sm opacity-90 mt-1">Today</div>
           </div>
         </div>
       </div>

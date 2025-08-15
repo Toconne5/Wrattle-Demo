@@ -1,7 +1,5 @@
-import { useState, useEffect, useContext } from 'react';
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, MessageCircle } from 'lucide-react';
 import FeedPost from './feed/FeedPost';
 import NotificationDropdown from './notifications/NotificationDropdown';
 import SettingsDropdown from './SettingsDropdown';
@@ -12,7 +10,7 @@ import AIAssistant from './AIAssistant';
 import GroupChatBubbles from './social/GroupChatBubbles';
 import { Post } from '../types/feed';
 import { transactionFeedData } from './feed/feedData';
-import { useTransactions } from './TransactionsContext'; // ✅ added for real holdings
+import { useTransactions } from './TransactionsContext';
 
 interface HomeTabProps {
   onLogout: () => void;
@@ -23,8 +21,8 @@ const HomeTab = ({ onLogout, onNavigateToSendInvest }: HomeTabProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [selectedAccount, setSelectedAccount] = useState('personal');
   const [showNewChatModal, setShowNewChatModal] = useState(false);
-  const [selectedChat, setSelectedChat] = useState(null);
-  const { holdings } = useTransactions(); // ✅ get real holdings from context
+  const [selectedChat, setSelectedChat] = useState<any>(null);
+  const { holdings } = useTransactions();
 
   // Static posts for demo purposes
   const staticPosts: Post[] = [
@@ -56,9 +54,10 @@ const HomeTab = ({ onLogout, onNavigateToSendInvest }: HomeTabProps) => {
     }
   ];
 
-  useEffect(() => {
+  // Build posts from current feed data
+  const buildPosts = () => {
     const formattedTransactions = transactionFeedData.map((txn, i) => ({
-      id: `txn-${i}`,
+      id: `txn-${i}-${txn.id}`,
       sender: txn.sender,
       recipient: txn.recipient,
       avatar: '💸',
@@ -106,7 +105,16 @@ const HomeTab = ({ onLogout, onNavigateToSendInvest }: HomeTabProps) => {
       : [...mockTransactions, ...staticPosts];
 
     setPosts(initialPosts);
-  }, [transactionFeedData]);
+  };
+
+  useEffect(() => {
+    buildPosts(); // initial
+    // Listen for feed updates triggered by addTransactionToFeed
+    const handler = () => buildPosts();
+    window.addEventListener('transactionFeedDataUpdated', handler);
+    return () => window.removeEventListener('transactionFeedDataUpdated', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const portfolioAccounts = [
     { value: 'personal', label: 'Personal Brokerage', balance: '$1,247.83', change: '+$23.47 (1.92%)' },
@@ -117,22 +125,27 @@ const HomeTab = ({ onLogout, onNavigateToSendInvest }: HomeTabProps) => {
 
   const currentAccount = portfolioAccounts.find(acc => acc.value === selectedAccount) || portfolioAccounts[0];
 
-  // ✅ Calculate real total portfolio value from holdings
+  // ✅ Same math as Profile: sum by lots (fallback to shares*price)
   const calculatePortfolioValue = () => {
     if (!holdings || holdings.length === 0) return 0;
-    return holdings.reduce((total, h) => total + h.totalShares * h.price, 0);
+    const total = holdings.reduce((sum: number, h: any) => {
+      if (Array.isArray(h.lots) && h.lots.length) {
+        return sum + h.lots.reduce((s: number, lot: any) => {
+          if (typeof lot.amountUSD === 'number') return s + lot.amountUSD;
+          const n = parseFloat(String(lot.currentValue || lot.costBasis || '0').replace(/[$,]/g, ''));
+          return s + (isNaN(n) ? 0 : n);
+        }, 0);
+      }
+      return sum + (h.totalShares * (h.price || 0));
+    }, 0);
+    return Math.round(total * 100) / 100;
   };
 
   const handleUpdatePost = (postId: string, updates: { likes: number; liked: boolean; comments?: number }) => {
     setPosts(prev =>
       prev.map(post =>
         post.id === postId
-          ? {
-              ...post,
-              likes: updates.likes,
-              liked: updates.liked,
-              ...(updates.comments !== undefined && { comments: updates.comments })
-            }
+          ? { ...post, likes: updates.likes, liked: updates.liked, ...(updates.comments !== undefined && { comments: updates.comments }) }
           : post
       )
     );
