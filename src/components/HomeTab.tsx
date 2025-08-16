@@ -26,32 +26,8 @@ const HomeTab = ({ onLogout, onNavigateToSendInvest }: HomeTabProps) => {
 
   // Static posts for demo purposes
   const staticPosts: Post[] = [
-    {
-      id: '1',
-      sender: 'Sarah M.',
-      recipient: 'Mike R.',
-      avatar: '👩‍💼',
-      content: '',
-      timestamp: '2 hours ago',
-      likes: 32,
-      comments: 8,
-      liked: true,
-      stock: 'AAPL',
-      amount: '$25'
-    },
-    {
-      id: '2',
-      sender: 'Mike R.',
-      recipient: 'Emma L.',
-      avatar: '👨‍💻',
-      content: '',
-      timestamp: '4 hours ago',
-      likes: 15,
-      comments: 5,
-      liked: false,
-      stock: 'TSLA',
-      amount: '$50'
-    }
+    { id: '1', sender: 'Sarah M.', recipient: 'Mike R.', avatar: '👩‍💼', content: '', timestamp: '2 hours ago', likes: 32, comments: 8, liked: true, stock: 'AAPL', amount: '$25' },
+    { id: '2', sender: 'Mike R.', recipient: 'Emma L.', avatar: '👨‍💻', content: '', timestamp: '4 hours ago', likes: 15, comments: 5, liked: false, stock: 'TSLA', amount: '$50' }
   ];
 
   // Build posts from current feed data
@@ -71,45 +47,16 @@ const HomeTab = ({ onLogout, onNavigateToSendInvest }: HomeTabProps) => {
     }));
 
     const mockTransactions: Post[] = [
-      {
-        id: 'mock-1',
-        sender: 'DemoUser123',
-        recipient: 'Friend456',
-        avatar: '🧑‍🚀',
-        content: '',
-        timestamp: 'Just now',
-        likes: 12,
-        comments: 3,
-        liked: false,
-        stock: 'NVDA',
-        amount: '$100'
-      },
-      {
-        id: 'mock-2',
-        sender: 'InvestorJane',
-        recipient: 'NewGradAlex',
-        avatar: '👩‍🎓',
-        content: '',
-        timestamp: '1 hour ago',
-        likes: 7,
-        comments: 2,
-        liked: true,
-        stock: 'MSFT',
-        amount: '$75'
-      }
+      { id: 'mock-1', sender: 'DemoUser123', recipient: 'Friend456', avatar: '🧑‍🚀', content: '', timestamp: 'Just now', likes: 12, comments: 3, liked: false, stock: 'NVDA', amount: '$100' },
+      { id: 'mock-2', sender: 'InvestorJane', recipient: 'NewGradAlex', avatar: '👩‍🎓', content: '', timestamp: '1 hour ago', likes: 7, comments: 2, liked: true, stock: 'MSFT', amount: '$75' }
     ];
 
     const hasRealTransactions = formattedTransactions.length > 0;
-    const initialPosts = hasRealTransactions
-      ? [...formattedTransactions, ...staticPosts]
-      : [...mockTransactions, ...staticPosts];
-
-    setPosts(initialPosts);
+    setPosts(hasRealTransactions ? [...formattedTransactions, ...staticPosts] : [...mockTransactions, ...staticPosts]);
   };
 
   useEffect(() => {
-    buildPosts(); // initial
-    // Listen for feed updates triggered by addTransactionToFeed
+    buildPosts(); // initial render
     const handler = () => buildPosts();
     window.addEventListener('transactionFeedDataUpdated', handler);
     return () => window.removeEventListener('transactionFeedDataUpdated', handler);
@@ -125,7 +72,7 @@ const HomeTab = ({ onLogout, onNavigateToSendInvest }: HomeTabProps) => {
 
   const currentAccount = portfolioAccounts.find(acc => acc.value === selectedAccount) || portfolioAccounts[0];
 
-  // ✅ Same math as Profile: sum by lots (fallback to shares*price)
+  // Sum portfolio by lots (fallback to shares*price)
   const calculatePortfolioValue = () => {
     if (!holdings || holdings.length === 0) return 0;
     const total = holdings.reduce((sum: number, h: any) => {
@@ -158,29 +105,34 @@ const HomeTab = ({ onLogout, onNavigateToSendInvest }: HomeTabProps) => {
 
   return (
     <div className="space-y-6 pb-24">
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
+      {/* Header: stack on mobile, row on md+ */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        {/* Left: title & subtitle – full width on mobile */}
+        <div className="md:flex-1">
           <h1 className="text-2xl font-bold text-[#002E5D]">Your Feed</h1>
           <p className="text-gray-600">See what your friends are investing in</p>
         </div>
-        <div className="flex-1 mx-8">
-          <div className="flex items-center justify-center">
-            <GroupChatBubbles />
-          </div>
+
+        {/* Middle: bubbles – hide on small screens to avoid squeezing text */}
+        <div className="hidden md:flex md:flex-1 md:justify-center">
+          <GroupChatBubbles />
         </div>
-        <div className="flex items-center space-x-2">
+
+        {/* Right: notifications/settings */}
+        <div className="flex items-center space-x-2 md:justify-end">
           <NotificationDropdown />
           <SettingsDropdown onLogout={onLogout} />
         </div>
       </div>
 
-      <div className="bg-gradient-to-r from-[#002E5D] to-[#4DA8DA] rounded-xl p-6 text-white">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1">
-            <div className="flex items-center space-x-3 mb-2">
-              <h3 className="text-lg font-semibold">Portfolio Value</h3>
+      {/* Portfolio banner – stack on mobile */}
+      <div className="bg-gradient-to-r from-[#002E5D] to-[#4DA8DA] rounded-xl p-4 sm:p-6 text-white">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div className="md:flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mb-2">
+              <h3 className="text-lg font-semibold mb-2 sm:mb-0">Portfolio Value</h3>
               <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-                <SelectTrigger className="w-48 bg-white/10 border-white/20 text-white">
+                <SelectTrigger className="w-full sm:w-56 bg-white/10 border-white/20 text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -192,28 +144,31 @@ const HomeTab = ({ onLogout, onNavigateToSendInvest }: HomeTabProps) => {
                 </SelectContent>
               </Select>
             </div>
-            <p className="text-3xl font-bold">${calculatePortfolioValue().toFixed(2)}</p>
+            <p className="text-3xl sm:text-4xl font-bold">${calculatePortfolioValue().toFixed(2)}</p>
           </div>
-          <div className="text-right">
-            <p className="text-green-300 font-semibold">{currentAccount.change}</p>
+
+          {/* Right block shows below on mobile, right on md+ */}
+          <div className="text-left md:text-right">
+            <p className="text-green-200 font-semibold">{currentAccount.change}</p>
             <p className="text-sm opacity-80">Today</p>
           </div>
         </div>
-        <div className="flex space-x-4 text-sm">
+
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:gap-6 text-sm">
           <div>
             <p className="opacity-80">Buying Power</p>
             <p className="font-semibold">$156.32</p>
           </div>
           <div>
-            <p className="opacity-80">Day's Change</p>
-            <p className="font-semibold text-green-300">+1.92%</p>
+            <p className="opacity-80">Day&apos;s Change</p>
+            <p className="font-semibold text-green-200">+1.92%</p>
           </div>
         </div>
       </div>
 
       <CollapsibleChallenges />
 
-      <div className="bg-white rounded-xl shadow-sm border p-6">
+      <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Activity</h2>
         <div className="space-y-4">
           {posts.map(post => (
@@ -229,10 +184,7 @@ const HomeTab = ({ onLogout, onNavigateToSendInvest }: HomeTabProps) => {
       </div>
 
       <NewChatModal open={showNewChatModal} onOpenChange={setShowNewChatModal} />
-
-      {selectedChat && (
-        <ChatModal chat={selectedChat} open={!!selectedChat} onOpenChange={() => setSelectedChat(null)} />
-      )}
+      {selectedChat && <ChatModal chat={selectedChat} open={!!selectedChat} onOpenChange={() => setSelectedChat(null)} />}
 
       <AIAssistant />
     </div>
