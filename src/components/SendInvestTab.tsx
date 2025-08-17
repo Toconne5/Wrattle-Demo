@@ -108,14 +108,11 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
       stockName
     });
 
-    // ❌ REMOVE the feed post here (it would use the pre-Accept ticker)
-    // ❌ REMOVE addTransaction here too — we’ll add it after Accept with the final ticker
-
     setShowReceiveModal(true);
   };
 
   return (
-    <div className="space-y-6 pb-32 md:pb-8">
+    <div className="space-y-6 pb-safe pt-safe">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-[#002E5D]">Send & Invest</h2>
         <div className="flex items-center space-x-2">
@@ -137,12 +134,13 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Amount to Send</label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 type="number"
                 placeholder="0.00"
                 min="0"
                 step="0.01"
+                inputMode="decimal"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="pl-10 text-lg font-semibold"
@@ -154,7 +152,7 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Select Stock</label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 placeholder="Search stocks (e.g., AAPL)"
                 value={searchTerm}
@@ -196,7 +194,7 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">To</label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 placeholder="Search users"
                 className="pl-10"
@@ -272,10 +270,7 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
       {pendingTransaction && (
         <ReceiveMoneyModal
           isOpen={showReceiveModal}
-          onClose={() => {
-            setShowReceiveModal(false);
-            setPendingTransaction(null);
-          }}
+          onClose={() => { setShowReceiveModal(false); setPendingTransaction(null); }}
           senderName={pendingTransaction.sender}
           amount={pendingTransaction.amount}
           originalStock={pendingTransaction.stock}
@@ -284,8 +279,6 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
           stockPrice={pendingTransaction.stockPrice}
           stockSymbol={pendingTransaction.stockSymbol}
           stockName={pendingTransaction.stockName}
-
-          // NEW: when user accepts, post to feed & add transaction with the FINAL ticker
           onAccepted={({ symbol, name, price, amount }) => {
             const recipient = [...[{ id: 'personal', type: 'personal' }], ...friends].find(r => r.id === selectedRecipient);
             const type = recipient?.type === 'personal' ? 'received' : 'sent';

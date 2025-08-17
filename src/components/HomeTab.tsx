@@ -30,7 +30,7 @@ const HomeTab = ({ onLogout, onNavigateToSendInvest }: HomeTabProps) => {
     { id: '2', sender: 'Mike R.', recipient: 'Emma L.', avatar: '👨‍💻', content: '', timestamp: '4 hours ago', likes: 15, comments: 5, liked: false, stock: 'TSLA', amount: '$50' }
   ];
 
-  // Build posts from current feed data
+  // ✅ build posts (real txns + static, or mock fallback)
   const buildPosts = () => {
     const formattedTransactions = transactionFeedData.map((txn, i) => ({
       id: `txn-${i}-${txn.id}`,
@@ -52,11 +52,16 @@ const HomeTab = ({ onLogout, onNavigateToSendInvest }: HomeTabProps) => {
     ];
 
     const hasRealTransactions = formattedTransactions.length > 0;
-    setPosts(hasRealTransactions ? [...formattedTransactions, ...staticPosts] : [...mockTransactions, ...staticPosts]);
+    const initialPosts = hasRealTransactions
+      ? [...formattedTransactions, ...staticPosts]
+      : [...mockTransactions, ...staticPosts];
+
+    setPosts(initialPosts);
   };
 
+  // ✅ listen for "transactionFeedDataUpdated" to live-refresh
   useEffect(() => {
-    buildPosts(); // initial render
+    buildPosts(); // initial load
     const handler = () => buildPosts();
     window.addEventListener('transactionFeedDataUpdated', handler);
     return () => window.removeEventListener('transactionFeedDataUpdated', handler);
@@ -69,10 +74,9 @@ const HomeTab = ({ onLogout, onNavigateToSendInvest }: HomeTabProps) => {
     { value: 'child2-utma', label: "Alex's UTMA", balance: '$1,956.42', change: '+$31.85 (1.65%)' },
     { value: '529-college', label: 'College 529 Plan', balance: '$8,234.67', change: '+$124.33 (1.53%)' }
   ];
-
   const currentAccount = portfolioAccounts.find(acc => acc.value === selectedAccount) || portfolioAccounts[0];
 
-  // Sum portfolio by lots (fallback to shares*price)
+  // ✅ same lots-aware math used in Profile
   const calculatePortfolioValue = () => {
     if (!holdings || holdings.length === 0) return 0;
     const total = holdings.reduce((sum: number, h: any) => {
@@ -98,77 +102,67 @@ const HomeTab = ({ onLogout, onNavigateToSendInvest }: HomeTabProps) => {
     );
   };
 
-  const handleShare = (stockSymbol: string, postId?: string) => {
-    const shareMessage = `Check out $${stockSymbol}! 📈`;
-    alert(`Share message created: "${shareMessage}"\n\nThis would open your chat to send this ticker to friends!`);
+  const handleShare = (stockSymbol: string) => {
+    alert(`Share message created: "Check out $${stockSymbol}! 📈"`);
   };
 
   return (
     <div className="space-y-6 pb-24">
-      {/* Header: stack on mobile, row on md+ */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        {/* Left: title & subtitle – full width on mobile */}
-        <div className="md:flex-1">
-          <h1 className="text-2xl font-bold text-[#002E5D]">Your Feed</h1>
-          <p className="text-gray-600">See what your friends are investing in</p>
+      {/* header */}
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold text-[#002E5D] leading-tight">Your Feed</h1>
+          <p className="text-gray-600 leading-snug">See what your friends are investing in</p>
         </div>
-
-        {/* Middle: bubbles – hide on small screens to avoid squeezing text */}
-        <div className="hidden md:flex md:flex-1 md:justify-center">
-          <GroupChatBubbles />
-        </div>
-
-        {/* Right: notifications/settings */}
-        <div className="flex items-center space-x-2 md:justify-end">
+        <div className="flex items-center space-x-2">
           <NotificationDropdown />
           <SettingsDropdown onLogout={onLogout} />
         </div>
       </div>
 
-      {/* Portfolio banner – stack on mobile */}
-      <div className="bg-gradient-to-r from-[#002E5D] to-[#4DA8DA] rounded-xl p-4 sm:p-6 text-white">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div className="md:flex-1">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mb-2">
-              <h3 className="text-lg font-semibold mb-2 sm:mb-0">Portfolio Value</h3>
-              <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-                <SelectTrigger className="w-full sm:w-56 bg-white/10 border-white/20 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {portfolioAccounts.map(account => (
-                    <SelectItem key={account.value} value={account.value}>
-                      {account.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      {/* small bubbles row (kept, but compact) */}
+      <div className="flex items-center justify-center">
+        <GroupChatBubbles />
+      </div>
+
+      {/* portfolio banner (no overlap on mobile) */}
+      <div className="bg-gradient-to-r from-[#002E5D] to-[#4DA8DA] rounded-2xl p-5 md:p-6 text-white">
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold">Portfolio Value</h3>
+          <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+            <SelectTrigger className="w-full sm:w-64 bg-white/10 border-white/20 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {portfolioAccounts.map(account => (
+                <SelectItem key={account.value} value={account.value}>
+                  {account.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="text-4xl sm:text-5xl font-extrabold tracking-tight">
+            ${calculatePortfolioValue().toFixed(2)}
+          </div>
+          <div className="text-green-300 font-semibold">{currentAccount.change}</div>
+          <div className="text-sm opacity-80">Today</div>
+
+          <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <div className="opacity-80">Buying Power</div>
+              <div className="font-semibold">$156.32</div>
             </div>
-            <p className="text-3xl sm:text-4xl font-bold">${calculatePortfolioValue().toFixed(2)}</p>
-          </div>
-
-          {/* Right block shows below on mobile, right on md+ */}
-          <div className="text-left md:text-right">
-            <p className="text-green-200 font-semibold">{currentAccount.change}</p>
-            <p className="text-sm opacity-80">Today</p>
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:gap-6 text-sm">
-          <div>
-            <p className="opacity-80">Buying Power</p>
-            <p className="font-semibold">$156.32</p>
-          </div>
-          <div>
-            <p className="opacity-80">Day&apos;s Change</p>
-            <p className="font-semibold text-green-200">+1.92%</p>
+            <div>
+              <div className="opacity-80">Day&apos;s Change</div>
+              <div className="font-semibold text-green-300">+1.92%</div>
+            </div>
           </div>
         </div>
       </div>
 
       <CollapsibleChallenges />
 
-      <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
+      <div className="bg-white rounded-xl shadow-sm border p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Activity</h2>
         <div className="space-y-4">
           {posts.map(post => (
@@ -185,7 +179,6 @@ const HomeTab = ({ onLogout, onNavigateToSendInvest }: HomeTabProps) => {
 
       <NewChatModal open={showNewChatModal} onOpenChange={setShowNewChatModal} />
       {selectedChat && <ChatModal chat={selectedChat} open={!!selectedChat} onOpenChange={() => setSelectedChat(null)} />}
-
       <AIAssistant />
     </div>
   );

@@ -13,11 +13,10 @@ const ProfileTab = ({ onLogout }: { onLogout: () => void }) => {
   const [selectedAccount, setSelectedAccount] = useState('personal');
   const [selectedStock, setSelectedStock] = useState<string | null>(null);
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
-  const { holdings } = useTransactions(); // live holdings with lots
+  const { holdings } = useTransactions();
 
   const currentUser = { name: "Tommy O.", avatar: "🧑‍💻", username: "tommy_o" };
 
-  // Accounts for the dropdown
   const portfolioAccounts = [
     { value: 'personal', label: 'Personal Brokerage' },
     { value: 'child1-utma', label: "Emma's UTMA" },
@@ -25,7 +24,6 @@ const ProfileTab = ({ onLogout }: { onLogout: () => void }) => {
     { value: '529-college', label: 'College 529 Plan' }
   ];
 
-  // Sum portfolio using lots (exact dollars invested per accept)
   const calculatePortfolioValue = () => {
     if (!holdings || holdings.length === 0) return 0;
     return holdings.reduce((sum: number, h: any) => {
@@ -41,7 +39,6 @@ const ProfileTab = ({ onLogout }: { onLogout: () => void }) => {
     }, 0);
   };
 
-  // Convert to the shape PortfolioHoldings expects, preserving lots
   const convertHoldingsForUI = (arr: any[]) => {
     return (arr || []).map((h: any) => {
       const lots = (h.lots && h.lots.length)
@@ -87,7 +84,7 @@ const ProfileTab = ({ onLogout }: { onLogout: () => void }) => {
   const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 });
 
   return (
-    <div className="space-y-6 pb-32 md:pb-8">
+    <div className="space-y-6 pb-24">
       <div className="flex justify-end space-x-2">
         <NotificationDropdown />
         <SettingsDropdown onLogout={onLogout} />
@@ -100,45 +97,36 @@ const ProfileTab = ({ onLogout }: { onLogout: () => void }) => {
         onSendInvestClick={handleSendInvestClick}
       />
 
-      {/* Feed-style banner (same gradient/structure) */}
-      <div className="bg-gradient-to-r from-[#002E5D] to-[#4DA8DA] rounded-2xl p-6 text-white">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center space-x-3 mb-3">
-              <h3 className="text-lg font-semibold">Portfolio Value</h3>
-              <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-                <SelectTrigger className="w-56 bg-white/10 border-white/20 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {portfolioAccounts.map((a) => (
-                    <SelectItem key={a.value} value={a.value}>
-                      {a.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      {/* banner – same structure as Feed to avoid overlap */}
+      <div className="bg-gradient-to-r from-[#002E5D] to-[#4DA8DA] rounded-2xl p-5 md:p-6 text-white">
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold">Portfolio Value</h3>
+          <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+            <SelectTrigger className="w-full sm:w-64 bg-white/10 border-white/20 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {portfolioAccounts.map((a) => (
+                <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            <div className="text-5xl font-extrabold tracking-tight">
-              {currency.format(Math.round(total * 100) / 100)}
-            </div>
-
-            <div className="mt-4 flex items-center space-x-8 text-sm">
-              <div>
-                <div className="opacity-90">Buying Power</div>
-                <div className="font-semibold">$156.32</div>
-              </div>
-              <div>
-                <div className="opacity-90">Day&apos;s Change</div>
-                <div className="font-semibold text-green-300">+1.92%</div>
-              </div>
-            </div>
+          <div className="text-4xl sm:text-5xl font-extrabold tracking-tight">
+            {currency.format(Math.round(total * 100) / 100)}
           </div>
+          <div className="text-green-300 font-semibold">+$23.47 (1.92%)</div>
+          <div className="text-sm opacity-90">Today</div>
 
-          <div className="text-right">
-            <div className="text-green-300 font-semibold">+$23.47 (1.92%)</div>
-            <div className="text-sm opacity-90 mt-1">Today</div>
+          <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <div className="opacity-90">Buying Power</div>
+              <div className="font-semibold">$156.32</div>
+            </div>
+            <div>
+              <div className="opacity-90">Day&apos;s Change</div>
+              <div className="font-semibold text-green-300">+1.92%</div>
+            </div>
           </div>
         </div>
       </div>
