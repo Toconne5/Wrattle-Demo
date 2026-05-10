@@ -1,5 +1,18 @@
 // services/stockApi.ts
-const ALPHA_VANTAGE_API_KEY = 'XPZILWK5QT6XU80V'; // Replace with your actual API key
+
+/**
+ * ⚠️  DO NOT put API keys in client-side code.
+ *
+ * The Alpha Vantage key was previously hardcoded here, which means anyone
+ * inspecting the JS bundle could steal it. This needs to be moved behind a
+ * backend proxy (e.g. a Firebase Cloud Function) that:
+ *   1. Stores the key in server-side environment config.
+ *   2. Exposes an authenticated endpoint the client calls instead.
+ *   3. Handles caching and rate-limiting server-side.
+ *
+ * Until that proxy is built, the app will use fallback/mock data.
+ */
+const ALPHA_VANTAGE_API_KEY = ''; // REMOVED — must come from backend proxy
 const BASE_URL = 'https://www.alphavantage.co/query';
 
 export interface StockData {

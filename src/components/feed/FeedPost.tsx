@@ -1,7 +1,7 @@
 // components/feed/FeedPost.tsx
 
 import React, { useState } from 'react';
-import { StockDetailModal } from '../StockDetailModal';
+import { StockDetailModal } from '../stock/StockDetailModal';
 import CommentSection from './CommentSection';
 import PostHeader from './PostHeader';
 import PostContent from './PostContent';

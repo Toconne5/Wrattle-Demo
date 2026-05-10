@@ -1,73 +1,86 @@
-# Welcome to your Lovable project
+# Wrattle
 
-## Project info
+A social investing app that turns every dollar into a conversation — and an investment. Wrattle combines peer-to-peer stock gifting, social feeds, and investment education into a mobile-first experience.
 
-**URL**: https://lovable.dev/projects/995d1a86-c899-4065-88df-68193a32b3d9
+## Features
 
-## How can I edit this code?
+- **Social Feed** — See what friends are investing in, like, comment, and share
+- **Send & Invest** — Send stock investments to friends or your own brokerage accounts
+- **Friends** — Add friends, view their activity, and chat
+- **Portfolio** — Track holdings, asset allocation, and stock performance with interactive charts
+- **Education** — Courses, quick tips, and community learning for all skill levels
+- **AI Assistant** — Chat-based assistant for investment questions
+- **Investment Challenges** — Gamified goals to encourage consistent investing
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **Runtime:** Vite + React 18 (client-side SPA)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS + shadcn/ui (Radix UI primitives)
+- **State/Data:** TanStack React Query, React Context
+- **Routing:** React Router DOM v6
+- **Charts:** Recharts
+- **Forms:** React Hook Form + Zod
+- **Auth/Database:** Firebase (Auth + Firestore)
+- **Stock Data:** Alpha Vantage API (requires backend proxy — see note below)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/995d1a86-c899-4065-88df-68193a32b3d9) and start prompting.
+## Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- [Node.js](https://nodejs.org/) v18+
+- npm (comes with Node.js)
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Getting Started
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+git clone git@github.com:Toconne5/Wrattle-Demo.git
+cd Wrattle-Demo
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app will be available at `http://localhost:5173`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Scripts
 
-**Use GitHub Codespaces**
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Production build to `dist/` |
+| `npm run build:dev` | Development build (unminified) |
+| `npm run preview` | Preview the production build locally |
+| `npm run lint` | Run ESLint |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Project Structure
 
-## What technologies are used for this project?
+```
+src/
+├── pages/           # Route-level page components
+├── components/
+│   ├── ui/          # shadcn/ui primitives
+│   ├── feed/        # Social feed components
+│   ├── friends/     # Friend management components
+│   ├── stock/       # Stock detail modal and charts
+│   ├── education/   # Learning content
+│   ├── chat/        # Chat/messaging
+│   └── ...          # Shared components (tabs, nav, modals)
+├── hooks/           # Custom React hooks
+├── services/        # API clients (stock data, friends)
+├── contexts/        # React context providers (auth, transactions, notifications)
+├── types/           # TypeScript type definitions
+├── lib/             # Firebase config, utilities
+└── assets/          # Static assets
+```
 
-This project is built with:
+## Configuration
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Firebase
 
-## How can I deploy this project?
+The app uses Firebase for authentication and Firestore for data persistence. Firebase config lives in `src/lib/firebase.ts`.
 
-Simply open [Lovable](https://lovable.dev/projects/995d1a86-c899-4065-88df-68193a32b3d9) and click on Share -> Publish.
+### Stock Data API
 
-## Can I connect a custom domain to my Lovable project?
+> **Note:** The Alpha Vantage API key has been removed from the codebase. The app currently falls back to mock data. A backend proxy (e.g. Firebase Cloud Function) is needed to securely handle API keys before connecting to live stock data.
 
-Yes, you can!
+## Deployment
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+The app builds to static files (`npm run build` → `dist/`). It can be deployed to any static hosting provider (Firebase Hosting, Vercel, Netlify, S3 + CloudFront, etc.).

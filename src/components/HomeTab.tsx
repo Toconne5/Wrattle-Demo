@@ -10,7 +10,7 @@ import AIAssistant from './AIAssistant';
 import GroupChatBubbles from './social/GroupChatBubbles';
 import { Post } from '../types/feed';
 import { transactionFeedData } from './feed/feedData';
-import { useTransactions } from './TransactionsContext';
+import { useTransactions } from '../contexts/TransactionsContext';
 
 interface HomeTabProps {
   onLogout: () => void;

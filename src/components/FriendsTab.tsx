@@ -7,7 +7,7 @@ import NotificationDropdown from './NotificationDropdown';
 import SettingsDropdown from './SettingsDropdown';
 import GroupChatBubbles from './social/GroupChatBubbles';
 
-interface ResearchTabProps {
+interface FriendsTabProps {
   onLogout: () => void;
 }
 
@@ -30,7 +30,7 @@ const ALL_FRIENDS: Friend[] = [
   { id: '8', name: 'Bea Park', username: '@beap', avatar: '🧑‍💼' },
 ];
 
-const ResearchTab = ({ onLogout }: ResearchTabProps) => {
+const FriendsTab = ({ onLogout }: FriendsTabProps) => {
   const [searchAdd, setSearchAdd] = useState('');
   const [searchFriends, setSearchFriends] = useState('');
 
@@ -154,4 +154,4 @@ const ResearchTab = ({ onLogout }: ResearchTabProps) => {
   );
 };
 
-export default ResearchTab;
+export default FriendsTab;

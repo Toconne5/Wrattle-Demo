@@ -6,10 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, DollarSign, Send } from "lucide-react";
 import NotificationDropdown from './NotificationDropdown';
 import SettingsDropdown from './SettingsDropdown';
-import { fetchStockData, StockData } from '../services/stockApi';
+import { useStockData } from '../hooks/useStockData';
+import { StockData } from '../services/stockApi';
 import ReceiveMoneyModal from './ReceiveMoneyModal';
 import { addTransactionToFeed } from './feed/feedData';
-import { useTransactions } from '../components/TransactionsContext';
+import { useTransactions } from '../contexts/TransactionsContext';
 
 interface SendInvestTabProps { onLogout: () => void; }
 
@@ -23,13 +24,17 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [stockData, setStockData] = useState<StockData | null>(null);
   const { addTransaction } = useTransactions();
-  const [loading, setLoading] = useState(false);
   const [showStockSearch, setShowStockSearch] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [pendingTransaction, setPendingTransaction] = useState<{
     sender: string; amount: number; stock: string; recipient: string; isKids: boolean;
     stockPrice?: number; stockSymbol?: string; stockName?: string;
   } | null>(null);
+
+  const { data: fetchedStockData, isLoading: loading } = useStockData(selectedStock || null);
+
+  // Sync fetched data to local state (needed for the send flow)
+  const effectiveStockData = fetchedStockData ?? stockData;
 
   const stockDatabase = [
     'AAPL - Apple Inc', 'GOOGL - Alphabet Inc', 'MSFT - Microsoft Corp', 'AMZN - Amazon.com Inc',
@@ -72,12 +77,10 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
     handleStockSearch(symbol);
   };
 
-  const handleStockSearch = async (symbol: string) => {
+  const handleStockSearch = (symbol: string) => {
     if (!symbol.trim()) { setStockData(null); return; }
-    setLoading(true);
-    try { setStockData(await fetchStockData(symbol)); }
-    catch { setStockData(null); }
-    finally { setLoading(false); }
+    // React Query handles the fetch via selectedStock state
+    setStockData(null);
   };
 
   const getAvailableBrokerageAccounts = () => {
@@ -103,7 +106,7 @@ const SendInvestTab = ({ onLogout }: SendInvestTabProps) => {
       stock: fullStockEntry,
       recipient: recipient?.name || "Friend",
       isKids,
-      stockPrice: stockData?.price,
+      stockPrice: effectiveStockData?.price,
       stockSymbol,
       stockName
     });

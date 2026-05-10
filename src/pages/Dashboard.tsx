@@ -5,15 +5,15 @@ import { useTransactionsModal } from '../contexts/TransactionsModalContext';
 import HomeTab from '../components/HomeTab';
 import EducationTab from '../components/EducationTab';
 import ProfileTab from '../components/ProfileTab';
-import ResearchTab from '../components/ResearchTab';
+import FriendsTab from '../components/FriendsTab';
 import SendInvestTab from '../components/SendInvestTab';
 import TransactionsPage from '../components/Profile/TransactionsPage';
 import BottomNavigation from '../components/BottomNavigation';
 import { NotificationProvider } from '../contexts/NotificationContext';
-import { TransactionsProvider, useTransactions } from '../components/TransactionsContext';
+import { TransactionsProvider, useTransactions } from '../contexts/TransactionsContext';
 import { TransactionsModalProvider } from "../contexts/TransactionsModalContext";
 
-const App = () => {
+const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('feed');
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -41,7 +41,6 @@ const App = () => {
       <TransactionsModalProvider>
         <NotificationProvider>
           <div className="min-h-screen bg-gray-50">
-            {/* page container – keeps content comfy on phones */}
             <div className="container-mobile pb-safe pt-4 md:pt-6">
               {activeTab === 'feed' && (
                 <HomeTab onLogout={handleLogout} onNavigateToSendInvest={handleNavigateToSendInvest} />
@@ -49,7 +48,7 @@ const App = () => {
               {activeTab === 'learn' && <EducationTab onLogout={handleLogout} />}
               {activeTab === 'profile' && <ProfileTab onLogout={handleLogout} />}
               {activeTab === 'invest' && <SendInvestTab onLogout={handleLogout} />}
-              {activeTab === 'friends' && <ResearchTab onLogout={handleLogout} />}
+              {activeTab === 'friends' && <FriendsTab onLogout={handleLogout} />}
               {showTransactions && (
                 <TransactionsPage transactions={transactions} onClose={handleCloseTransactions} />
               )}
@@ -63,4 +62,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default Dashboard;

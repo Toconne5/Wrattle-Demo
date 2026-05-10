@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronRight, TrendingUp, TrendingDown } from "lucide-react";
-import { StockDetailModal } from './StockDetailModal';
+import { StockDetailModal } from './stock/StockDetailModal';
 
 interface PortfolioHoldingsProps {
   currentHoldings: any[]; // Make sure currentHoldings is an array of holdings
