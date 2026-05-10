@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTransactions } from '../components/TransactionsContext';  // Correctly use the context hook
-import { Transaction } from '../components/TransactionsContext';  // Import the Transaction type
+import { useTransactions } from '../contexts/TransactionsContext';
+import { Transaction } from '../contexts/TransactionsContext';
 
 
 // Only expect `onClose` as a prop (no `transactions`)

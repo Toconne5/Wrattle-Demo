@@ -6,7 +6,7 @@ import PortfolioHoldings from './PortfolioHoldings';
 import AssetAllocation from './AssetAllocation';
 import UserHeader from './Profile/UserHeader';
 import { useNavigate } from 'react-router-dom';
-import { useTransactions } from '../components/TransactionsContext';
+import { useTransactions } from '../contexts/TransactionsContext';
 
 const ProfileTab = ({ onLogout }: { onLogout: () => void }) => {
   const navigate = useNavigate();

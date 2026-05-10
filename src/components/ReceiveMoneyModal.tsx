@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { DollarSign, Check, X } from "lucide-react";
-import { useTransactions } from '../components/TransactionsContext';
+import { useTransactions } from '../contexts/TransactionsContext';
 
 interface ReceiveMoneyModalProps {
   isOpen: boolean;

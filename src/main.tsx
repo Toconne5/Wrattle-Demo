@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import AppRouter from './App.tsx';  // Import AppRouter
-import { TransactionsProvider } from './components/TransactionsContext';  // Import TransactionsProvider
+import { TransactionsProvider } from './contexts/TransactionsContext';
 import { TransactionsModalProvider } from './contexts/TransactionsModalContext';  // Import TransactionsModalProvider
 import './index.css';
 

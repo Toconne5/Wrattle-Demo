@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { fetchStockData, StockData } from '../services/stockApi';
+import { useState } from 'react';
+import { useStockData } from '../../hooks/useStockData';
 import { StockChart } from './StockChart';
 import { StockDetailHeader } from './StockDetailHeader';
 import { StockDetailPrice } from './StockDetailPrice';
 import { StockDetailMetrics } from './StockDetailMetrics';
 import { StockDetailActions } from './StockDetailActions';
-import CommentSection from './feed/CommentSection';
+import CommentSection from '../feed/CommentSection';
 import { Heart, MessageCircle, Share } from 'lucide-react';
 
 interface StockDetailModalProps {
@@ -27,46 +27,13 @@ interface StockDetailModalProps {
 }
 
 export const StockDetailModal = ({ symbol, isOpen, onClose, originalPost, onUpdatePost, onNavigateToSendInvest, onShare }: StockDetailModalProps) => {
-  const [stockData, setStockData] = useState<StockData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { data: stockData, isLoading: loading } = useStockData(isOpen ? symbol : null);
   const [showComments, setShowComments] = useState(false);
 
   // Use originalPost data if available, otherwise use default values
   const [likes, setLikes] = useState(originalPost?.likes || 42);
   const [liked, setLiked] = useState(originalPost?.liked || false);
   const [comments, setComments] = useState(originalPost?.comments || 0);
-
-  useEffect(() => {
-    if (isOpen && symbol) {
-      loadStockData();
-    }
-  }, [isOpen, symbol]);
-
-  const loadStockData = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchStockData(symbol);
-      setStockData(data);
-    } catch (error) {
-      console.error('Failed to load stock data:', error);
-      // Fallback data for demo
-      setStockData({
-        symbol: symbol,
-        name: `${symbol} Inc.`,
-        price: 150.00,
-        change: 2.50,
-        changePercent: 1.69,
-        description: `${symbol} stock information`,
-        marketCap: '2.5T',
-        peRatio: 25.4,
-        high: 152.80,
-        low: 148.20,
-        volume: '45.2M'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleLike = () => {
     const newLiked = !liked;
